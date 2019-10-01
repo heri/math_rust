@@ -1,0 +1,10 @@
+[package]
+name = "math_lib_rust"
+version = "0.1.0"
+authors = ["heri<heri@studiozenkai.com>"]
+
+[lib]
+rand = "*"
+
+[dependencies]
+helix = "0.5.0"
