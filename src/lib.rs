@@ -4,9 +4,6 @@ extern crate helix;
 
 pub fn h_distance(lat1: &f64, lng1: &f64, lat2: &f64, lng2: &f64 -> usize {
     let earth_radius_kilometer = 6371.0_f64;
-    
-    let (paris_latitude_degrees, paris_longitude_degrees) = (48.85341_f64, -2.34880_f64);
-    let (london_latitude_degrees, london_longitude_degrees) = (51.50853_f64, -0.12574_f64);
 
     let lat1_r = lat1.to_radians();
     let lat2_r = lat2.to_radians();
@@ -23,10 +20,117 @@ pub fn h_distance(lat1: &f64, lng1: &f64, lat2: &f64, lng2: &f64 -> usize {
     return distance;
 }
 
+
+pub fn average_u32(data: &Vec<u32>) -> f32 {
+    let mut sum = 0;
+
+    for item in data {
+        sum = sum + *item;
+    }
+
+    let avg = sum as f32 / data.len() as f32;
+    avg
+}
+
+pub fn average_f32(data: &Vec<f32>) -> f32 {
+    let mut sum = 0.0;
+
+    for item in data {
+        sum = sum + *item;
+    }
+
+    let denominator = data.len();
+    sum = sum / denominator as f32;
+    sum
+}
+
+pub fn variance_f32(data: &Vec<f32>, mean: f32) -> f32 {
+    let mut numerator = 0.0;
+
+    for item in data {
+        numerator = numerator + ((*item - mean) * (*item - mean));
+    }
+
+    let denominator = (data.len() - 1) as f32;
+    let variance = numerator / denominator;
+    variance
+}
+
+pub fn standard_deviation_f32(data: &Vec<f32>, mean: f32) -> f32 {
+    let var = variance(data, mean);
+    let std_dev = var.sqrt();
+    std_dev
+}
+
+pub fn max_f32(data: &Vec<f32>) -> f32 {
+    let mut result = data[0];
+    
+    for item in data {
+        if *item > result {
+            result = *item;
+        }
+    }
+    result
+}
+
+pub fn min_f32(data: &Vec<f32>) -> f32 {
+    let mut result = data[0];
+    
+    for item in data {
+        if *item < result {
+            result = *item;
+        }
+    }
+    result
+}
+
+pub fn max_usize(data: &Vec<usize>) -> usize {
+    let mut result = data[0];
+    
+    for item in data {
+        if *item > result {
+            result = *item;
+        }
+    }
+    result
+}
+
+pub fn min_usize(data: &Vec<usize>) -> usize {
+    let mut result = data[0];
+    
+    for item in data {
+        if *item < result {
+            result = *item;
+        }
+    }
+    result
+}
+
 ruby! {
     class MathRust {
         def haversine_distance(lat1: Float, lng1: Float, lat1: Float, lng1: Float)) -> Float {
             return h_distance(&lat1, &lng1, &lat2, &lng2);
         }
+
+        def average(array: Vec<Float>) -> Float {
+            return average_f32(&array);
+        }
+
+        def variance(array: Vec<Float>, mean: Float) -> Float {
+            return variance_f32(&array, &mean);
+        }
+
+        def standard_deviation(array: Vec<Float>, mean: Float) -> Float {
+            return standard_deviation_f32(&array, &mean);
+        }
+
+        def min(array: Vec<Float>) -> Float {
+            return min_f32(&array);
+        }
+
+        def max(array: Vec<Float>) -> Float {
+            return max_f32(&array);
+        }
+        
     }
 }
