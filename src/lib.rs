@@ -20,30 +20,6 @@ pub fn h_distance(coord1: &Vec<f64>, coord2: &Vec<f64>) -> usize {
     return distance;
 }
 
-
-pub fn average_u32(data: &Vec<u32>) -> f32 {
-    let mut sum = 0;
-
-    for item in data {
-        sum = sum + *item;
-    }
-
-    let avg = sum as f32 / data.len() as f32;
-    avg
-}
-
-pub fn average_f32(data: &Vec<f32>) -> f32 {
-    let mut sum = 0.0;
-
-    for item in data {
-        sum = sum + *item;
-    }
-
-    let denominator = data.len();
-    sum = sum / denominator as f32;
-    sum
-}
-
 pub fn variance_f32(data: &Vec<f32>, mean: f32) -> f32 {
     let mut numerator = 0.0;
 
@@ -54,6 +30,97 @@ pub fn variance_f32(data: &Vec<f32>, mean: f32) -> f32 {
     let denominator = (data.len() - 1) as f32;
     let variance = numerator / denominator;
     variance
+}
+
+pub fn mean_f32(values : &Vec<f32>) -> f32 {
+    if values.len() == 0 {
+        return 0f32;
+    }
+ 
+    return values.iter().sum::<f32>() / (values.len() as f32);
+}
+
+pub fn covariance_f32(x_values : &Vec<f32>, y_values : &Vec<f32>) -> f32 {
+    if x_values.len() != y_values.len() {
+        panic!("x_values and y_values must be of equal length.");
+    }
+ 
+    let length : usize = x_values.len();
+     
+    if length == 0usize {
+        return 0f32;
+    }
+ 
+    let mut covariance : f32 = 0f32;
+    let mean_x = mean_f32(x_values);
+    let mean_y = mean_f32(y_values);
+ 
+    for i in 0..length {
+        covariance += (x_values[i] - mean_x) * (y_values[i] - mean_y)
+    }
+ 
+    return covariance / length as f32;       
+}
+
+pub struct LinearRegression {
+    pub coefficient: Option<f32>,
+    pub intercept: Option<f32>
+}
+ 
+impl LinearRegression {
+    pub fn new() -> LinearRegression {
+        LinearRegression { coefficient: None, intercept: None }
+    }
+
+    pub fn fit(&mut self, x_values : &Vec<f32>, y_values : &Vec<f32>) {
+        let b1 = covariance_f32(x_values, y_values) / variance_f32(x_values);
+        let b0 = mean_f32(y_values) - b1 * mean_f32(x_values);
+
+        self.intercept = Some(b0);
+        self.coefficient = Some(b1);       
+    }   
+
+    pub fn predict(&self, x : f32) -> f32 {
+        if self.coefficient.is_none() || self.intercept.is_none() {
+            panic!("fit(..) must be called first");
+        }
+
+        let b0 = self.intercept.unwrap();
+        let b1 = self.coefficient.unwrap();
+
+        return b0 + b1 * x;
+    }
+
+    pub fn predict_list(&self, x_values : &Vec<f32>) -> Vec<f32> {
+        let mut predictions = Vec::new();
+
+        for i in 0..x_values.len() {
+            predictions.push(self.predict(x_values[i]));
+        }
+
+        return predictions;
+    }
+
+    pub fn evaluate(&self, x_test : &Vec<f32>, y_test: &Vec<f32>) -> f32 {
+        if self.coefficient.is_none() || self.intercept.is_none() {
+            panic!("fit(..) must be called first");
+        }
+
+        let y_predicted = self.predict_list(x_test);
+        return self.root_mean_squared_error(y_test, &y_predicted);
+    }
+
+    fn root_mean_squared_error(&self, actual : &Vec<f32>, predicted : &Vec<f32>) -> f32 {
+        let mut sum_error = 0f32;
+        let length = actual.len();
+
+        for i in 0..length {
+            sum_error += f32::powf(predicted[i] - actual[i], 2f32);
+        }
+
+        let mean_error = sum_error / length as f32;
+        return mean_error.sqrt();
+    }
 }
 
 pub fn standard_deviation_f32(data: &Vec<f32>, mean: f32) -> f32 {
@@ -112,12 +179,28 @@ ruby! {
             return h_distance(&coord1, &coord2);
         }
 
+        def mean(array: Vec<Float>) -> Float {
+            return mean_f32(&array);
+        }
+
+        // same as mean
         def average(array: Vec<Float>) -> Float {
-            return average_f32(&array);
+            return mean_f32(&array);
         }
 
         def variance(array: Vec<Float>, mean: Float) -> Float {
             return variance_f32(&array, &mean);
+        }
+
+        def covariance(array1: Vec<Float>, array2: Vec<Float>) -> Float {
+            return variance_f32(&array1, &array2);
+        }
+
+        // currently this tries to fit x_Values and y_values with a simple linear regression and then uses model to predict for value
+        def linear_reg(x_values: Vec<Float>, y_values: Vec<Float>, value: Float) -> Float {
+            let mut model = LinearRegression::new();
+            model.fit(&x_values, &y_values);
+            return model.predict(value);
         }
 
         def standard_deviation(array: Vec<Float>, mean: Float) -> Float {
