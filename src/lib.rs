@@ -2,14 +2,14 @@
 #[macro_use]
 extern crate helix;
 
-pub fn h_distance(lat1: &f64, lng1: &f64, lat2: &f64, lng2: &f64 -> usize {
+pub fn h_distance(coord1: &Vec<f64>, coord2: &Vec<f64>) -> usize {
     let earth_radius_kilometer = 6371.0_f64;
 
-    let lat1_r = lat1.to_radians();
-    let lat2_r = lat2.to_radians();
+    let lat1_r = coord1[0].to_radians();
+    let lat2_r = coord2[0].to_radians();
 
-    let delta_latitude = (lat1 - lat2).to_radians();
-    let delta_longitude = (lng1 - lng2).to_radians();
+    let delta_latitude = (coord1[0] - coord2[0]).to_radians();
+    let delta_longitude = (coord1[1] - coord2[1]).to_radians();
 
     let central_angle_inner = (delta_latitude / 2.0).sin().powi(2)
         + lat1_r.cos() * lat2_r.cos() * (delta_longitude / 2.0).sin().powi(2);
@@ -108,8 +108,8 @@ pub fn min_usize(data: &Vec<usize>) -> usize {
 
 ruby! {
     class MathRust {
-        def haversine_distance(lat1: Float, lng1: Float, lat1: Float, lng1: Float)) -> Float {
-            return h_distance(&lat1, &lng1, &lat2, &lng2);
+        def haversine_distance(coord1: Vec<Float>, coord2: Vec<Float>) -> Float {
+            return h_distance(&coord1, &coord2);
         }
 
         def average(array: Vec<Float>) -> Float {
