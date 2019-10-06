@@ -197,10 +197,10 @@ ruby! {
         }
 
         // currently this tries to fit x_Values and y_values with a simple linear regression and then uses model to predict for value
-        def linear_reg(x_values: Vec<Float>, y_values: Vec<Float>, value: Float) -> Float {
+        def linear_reg(x_values: Vec<Float>, y_values: Vec<Float>) -> Vec<Float> {
             let mut model = LinearRegression::new();
             model.fit(&x_values, &y_values);
-            return model.predict(value);
+            return vec![model.intercept, model.coefficient];
         }
 
         def standard_deviation(array: Vec<Float>, mean: Float) -> Float {
