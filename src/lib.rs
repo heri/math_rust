@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate helix;
 
-pub fn h_distance(coord1: &Vec<f64>, coord2: &Vec<f64>) -> usize {
+pub fn h_distance(coord1: &Vec<f64>, coord2: &Vec<f64>) -> f64 {
     let earth_radius_kilometer = 6371.0_f64;
 
     let lat1_r = coord1[0].to_radians();
@@ -20,7 +20,7 @@ pub fn h_distance(coord1: &Vec<f64>, coord2: &Vec<f64>) -> usize {
     return distance;
 }
 
-pub fn variance_f32(data: &Vec<f32>, mean: f32) -> f32 {
+pub fn variance_f32(data: &Vec<f32>, mean: &f32) -> f32 {
     let mut numerator = 0.0;
 
     for item in data {
@@ -73,7 +73,7 @@ impl LinearRegression {
     }
 
     pub fn fit(&mut self, x_values : &Vec<f32>, y_values : &Vec<f32>) {
-        let b1 = covariance_f32(x_values, y_values) / variance_f32(x_values);
+        let b1 = covariance_f32(x_values, y_values) / variance_f32(x_values, &mean_f32(y_values));
         let b0 = mean_f32(y_values) - b1 * mean_f32(x_values);
 
         self.intercept = Some(b0);
@@ -124,7 +124,7 @@ impl LinearRegression {
 }
 
 pub fn standard_deviation_f32(data: &Vec<f32>, mean: f32) -> f32 {
-    let var = variance(data, mean);
+    let var = variance_f32(data, &mean);
     let std_dev = var.sqrt();
     std_dev
 }
