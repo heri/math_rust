@@ -2,6 +2,8 @@
 #[macro_use]
 extern crate helix;
 
+use std::collections::HashMap;
+
 pub fn h_distance(coord1: &Vec<f64>, coord2: &Vec<f64>) -> f64 {
     let earth_radius_kilometer = 6371.0_f64;
 
@@ -38,6 +40,32 @@ pub fn mean_f32(values : &Vec<f32>) -> f32 {
     }
  
     return values.iter().sum::<f32>() / (values.len() as f32);
+}
+
+pub fn array_to_vec(arr: &[f32]) -> Vec<f32> {
+     arr.iter().cloned().collect()
+}
+
+fn median_f32(vect: &Vec<f32>) -> f32 {
+    numbers = array_to_vec(vect);
+    numbers.sort();
+    let mid = numbers.len() / 2;
+    numbers[mid]
+}
+
+fn mode(vect: &Vec<f32>) -> f32 {
+    numbers = array_to_vec(vect);
+    let mut occurrences = HashMap::new();
+
+    for &value in numbers {
+        *occurrences.entry(value).or_insert(0) += 1;
+    }
+
+    occurrences
+        .into_iter()
+        .max_by_key(|&(_, count)| count)
+        .map(|(val, _)| val)
+        .expect("Cannot compute the mode of zero numbers")
 }
 
 pub fn covariance_f32(x_values : &Vec<f32>, y_values : &Vec<f32>) -> f32 {
@@ -213,6 +241,14 @@ ruby! {
 
         def max(array: Vec<Float>) -> Float {
             return max_f32(&array);
+        }
+
+        def median(array: Vec<Float>) -> Float {
+            return median_f32(&array);
+        }
+
+        def mode(array: Vec<Float>) -> Float {
+            return mode_f32(&array);
         }
         
     }
