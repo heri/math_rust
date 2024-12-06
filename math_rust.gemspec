@@ -1,17 +1,17 @@
 
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "math_rust/version"
+require "little_math_routines/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "math_rust"
-  spec.version       = MathRust::VERSION
+  spec.name          = "little_math_routines"
+  spec.version       = LittleMath::VERSION
   spec.authors       = ["heri"]
   spec.email         = ["heri@studiozenkai.com"]
 
   spec.summary       = %q{Math Rust}
   spec.description   = %q{A few Math computations in rust}
-  spec.homepage      = "http://github.com/heri/math_rust"
+  spec.homepage      = "http://github.com/heri/little_math_routines"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'

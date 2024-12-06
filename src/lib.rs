@@ -202,7 +202,7 @@ pub fn min_usize(data: &Vec<usize>) -> usize {
 }
 
 ruby! {
-    class MathRust {
+    class LittleMath {
         def haversine_distance(coord1: Vec<Float>, coord2: Vec<Float>) -> Float {
             return h_distance(&coord1, &coord2);
         }
