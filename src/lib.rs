@@ -4,60 +4,74 @@ extern crate helix;
 
 use std::collections::HashMap;
 
-pub fn h_distance(coord1: &Vec<f64>, coord2: &Vec<f64>) -> f64 {
-    let earth_radius_kilometer = 6371.0_f64;
+pub fn h_distance(coord1: &[f64], coord2: &[f64]) -> f64 {
+    if coord1.len() < 2 || coord2.len() < 2 {
+        panic!("Both coordinates must have at least two elements.");
+    }
 
-    let lat1_r = coord1[0].to_radians();
-    let lat2_r = coord2[0].to_radians();
+    const EARTH_RADIUS_KM: f64 = 6371.0;
 
-    let delta_latitude = (coord1[0] - coord2[0]).to_radians();
-    let delta_longitude = (coord1[1] - coord2[1]).to_radians();
+    let (lat1, lon1) = (coord1[0].to_radians(), coord1[1].to_radians());
+    let (lat2, lon2) = (coord2[0].to_radians(), coord2[1].to_radians());
 
-    let central_angle_inner = (delta_latitude / 2.0).sin().powi(2)
-        + lat1_r.cos() * lat2_r.cos() * (delta_longitude / 2.0).sin().powi(2);
+    let delta_lat = lat1 - lat2;
+    let delta_lon = lon1 - lon2;
+
+    let central_angle_inner = (delta_lat / 2.0).sin().powi(2)
+        + lat1.cos() * lat2.cos() * (delta_lon / 2.0).sin().powi(2);
+
     let central_angle = 2.0 * central_angle_inner.sqrt().asin();
 
-    let distance = earth_radius_kilometer * central_angle;
-
-    return distance;
+    EARTH_RADIUS_KM * central_angle
 }
 
-pub fn variance_f32(data: &Vec<f32>, mean: &f32) -> f32 {
-    let mut numerator = 0.0;
-
-    for item in data {
-        numerator = numerator + ((*item - mean) * (*item - mean));
+pub fn variance_f32(data: &[f32], mean: f32) -> f32 {
+    let len = data.len();
+    if len <= 1 {
+        return 0.0; // Variance undefined
     }
 
-    let denominator = (data.len() - 1) as f32;
-    let variance = numerator / denominator;
-    variance
+    let numerator: f32 = data.iter().map(|&x| (x - mean).powi(2)).sum();
+    numerator / (len - 1) as f32
 }
 
-pub fn mean_f32(values : &Vec<f32>) -> f32 {
-    if values.len() == 0 {
-        return 0f32;
+pub fn mean_f32(values: &[f32]) -> f32 {
+    if values.is_empty() {
+        return 0.0;
     }
- 
-    return values.iter().sum::<f32>() / (values.len() as f32);
+
+    values.iter().sum::<f32>() / values.len() as f32
 }
 
 pub fn array_to_vec(arr: &[f32]) -> Vec<f32> {
      arr.iter().cloned().collect()
 }
 
-fn median_f32(vect: &Vec<f32>) -> f32 {
-    numbers = array_to_vec(vect);
-    numbers.sort();
+pub fn median_f32(vect: &[f32]) -> f32 {
+    if vect.is_empty() {
+        panic!("Cannot compute median of an empty array.");
+    }
+
+    let mut numbers = vect.to_vec();
+    numbers.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let mid = numbers.len() / 2;
-    numbers[mid]
+
+    if numbers.len() % 2 == 0 {
+        (numbers[mid - 1] + numbers[mid]) / 2.0
+    } else {
+        numbers[mid]
+    }
 }
 
-fn mode(vect: &Vec<f32>) -> f32 {
-    numbers = array_to_vec(vect);
+
+pub fn mode(vect: &[f32]) -> f32 {
+    if vect.is_empty() {
+        panic!("Cannot compute mode of an empty array.");
+    }
+
     let mut occurrences = HashMap::new();
 
-    for &value in numbers {
+    for &value in vect {
         *occurrences.entry(value).or_insert(0) += 1;
     }
 
@@ -65,30 +79,30 @@ fn mode(vect: &Vec<f32>) -> f32 {
         .into_iter()
         .max_by_key(|&(_, count)| count)
         .map(|(val, _)| val)
-        .expect("Cannot compute the mode of zero numbers")
+        .expect("Unexpected error computing mode")
 }
 
-pub fn covariance_f32(x_values : &Vec<f32>, y_values : &Vec<f32>) -> f32 {
+
+pub fn covariance_f32(x_values: &[f32], y_values: &[f32]) -> f32 {
     if x_values.len() != y_values.len() {
-        panic!("x_values and y_values must be of equal length.");
+        panic!("x_values and y_values must have equal lengths.");
     }
- 
-    let length : usize = x_values.len();
-     
-    if length == 0usize {
-        return 0f32;
+
+    if x_values.is_empty() {
+        return 0.0;
     }
- 
-    let mut covariance : f32 = 0f32;
+
     let mean_x = mean_f32(x_values);
     let mean_y = mean_f32(y_values);
- 
-    for i in 0..length {
-        covariance += (x_values[i] - mean_x) * (y_values[i] - mean_y)
-    }
- 
-    return covariance / length as f32;       
+
+    x_values
+        .iter()
+        .zip(y_values.iter())
+        .map(|(&x, &y)| (x - mean_x) * (y - mean_y))
+        .sum::<f32>()
+        / x_values.len() as f32
 }
+
 
 pub struct LinearRegression {
     pub coefficient: Option<f32>,
