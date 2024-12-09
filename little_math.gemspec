@@ -1,10 +1,10 @@
 
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "little_math_routines/version"
+require "little_math/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "little_math_routines"
+  spec.name          = "Little Math Routines"
   spec.version       = LittleMath::VERSION
   spec.authors       = ["heri"]
   spec.email         = ["heri@studiozenkai.com"]

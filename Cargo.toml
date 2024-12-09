@@ -1,6 +1,6 @@
 [package]
-name = "math_lib_rust"
-version = "0.1.0"
+name = "little_math_routines"
+version = "0.1.1"
 authors = ["heri<heri@studiozenkai.com>"]
 
 [lib]
