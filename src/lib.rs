@@ -3,6 +3,7 @@
 extern crate helix;
 
 use std::collections::HashMap;
+use std::error::Error;
 
 pub fn h_distance(coord1: &[f64], coord2: &[f64]) -> f64 {
     if coord1.len() < 2 || coord2.len() < 2 {
@@ -63,7 +64,6 @@ pub fn median_f32(vect: &[f32]) -> f32 {
     }
 }
 
-
 pub fn mode(vect: &[f32]) -> f32 {
     if vect.is_empty() {
         panic!("Cannot compute mode of an empty array.");
@@ -114,55 +114,63 @@ impl LinearRegression {
         LinearRegression { coefficient: None, intercept: None }
     }
 
-    pub fn fit(&mut self, x_values : &Vec<f32>, y_values : &Vec<f32>) {
-        let b1 = covariance_f32(x_values, y_values) / variance_f32(x_values, &mean_f32(y_values));
-        let b0 = mean_f32(y_values) - b1 * mean_f32(x_values);
+    pub fn fit(&mut self, x_values: &[f32], y_values: &[f32]) -> Result<(), Box<dyn Error>> {
+        if x_values.len() != y_values.len() || x_values.is_empty() {
+            return Err("Input vectors must have the same non-zero length".into());
+        }
 
+        let x_mean = mean_f32(x_values);
+        let y_mean = mean_f32(y_values);
+
+        let covariance = covariance_f32(x_values, y_values, x_mean, y_mean);
+        let variance = variance_f32(x_values, x_mean);
+
+        if variance == 0.0 {
+            return Err("Variance of x_values is zero, cannot perform regression".into());
+        }
+
+        let b1 = covariance / variance;
+        let b0 = y_mean - b1 * x_mean;
+
+        self.coefficient = Some(b1);
         self.intercept = Some(b0);
-        self.coefficient = Some(b1);       
+        Ok(())   
     }   
 
-    pub fn predict(&self, x : f32) -> f32 {
-        if self.coefficient.is_none() || self.intercept.is_none() {
-            panic!("fit(..) must be called first");
+    pub fn predict(&self, x : f32) -> Result<f32, Box<dyn Error>> {
+        match (self.coefficient, self.intercept) {
+            (Some(b1), Some(b0)) => Ok(b0 + b1 * x),
+            _ => Err("Model has not been fitted yet. Call `fit` first.".into()),
         }
-
-        let b0 = self.intercept.unwrap();
-        let b1 = self.coefficient.unwrap();
-
-        return b0 + b1 * x;
     }
 
-    pub fn predict_list(&self, x_values : &Vec<f32>) -> Vec<f32> {
-        let mut predictions = Vec::new();
-
-        for i in 0..x_values.len() {
-            predictions.push(self.predict(x_values[i]));
-        }
-
-        return predictions;
+    pub fn predict_list(&self, x_values: &[f32]) -> Result<Vec<f32>, Box<dyn Error>> {
+        x_values.iter().map(|&x| self.predict(x)).collect()
     }
 
-    pub fn evaluate(&self, x_test : &Vec<f32>, y_test: &Vec<f32>) -> f32 {
-        if self.coefficient.is_none() || self.intercept.is_none() {
-            panic!("fit(..) must be called first");
+    pub fn evaluate(&self, x_test: &[f32], y_test: &[f32]) -> Result<f32, Box<dyn Error>> {
+        if x_test.len() != y_test.len() {
+            return Err("Test vectors must have the same length".into());
         }
 
-        let y_predicted = self.predict_list(x_test);
-        return self.root_mean_squared_error(y_test, &y_predicted);
+        let predictions = self.predict_list(x_test)?;
+        root_mean_squared_error(y_test, &predictions)
+    }
+}
+
+pub fn root_mean_squared_error(actual: &[f32], predicted: &[f32]) -> Result<f32, Box<dyn Error>> {
+    if actual.len() != predicted.len() {
+        return Err("Actual and predicted vectors must have the same length".into());
     }
 
-    fn root_mean_squared_error(&self, actual : &Vec<f32>, predicted : &Vec<f32>) -> f32 {
-        let mut sum_error = 0f32;
-        let length = actual.len();
+    let mse = actual
+        .iter()
+        .zip(predicted.iter())
+        .map(|(&a, &p)| (a - p).powi(2))
+        .sum::<f32>()
+        / actual.len() as f32;
 
-        for i in 0..length {
-            sum_error += f32::powf(predicted[i] - actual[i], 2f32);
-        }
-
-        let mean_error = sum_error / length as f32;
-        return mean_error.sqrt();
-    }
+    Ok(mse.sqrt())
 }
 
 pub fn standard_deviation_f32(data: &Vec<f32>, mean: f32) -> f32 {
@@ -239,10 +247,32 @@ ruby! {
         }
 
         // currently this tries to fit x_Values and y_values with a simple linear regression and then uses model to predict for value
-        def linear_reg(x_values: Vec<Float>, y_values: Vec<Float>) -> Vec<Float> {
+        def linear_reg(x_values: Vec<Float>, y_values: Vec<Float>) -> Result<Hash, String> {
             let mut model = LinearRegression::new();
-            model.fit(&x_values, &y_values);
-            return vec![model.intercept, model.coefficient];
+            if let Err(e) = model.fit(&x_values, &y_values) {
+                return Err(e.to_string());
+            }
+
+            Ok(hash! {
+                "intercept" => model.intercept.unwrap(),
+                "coefficient" => model.coefficient.unwrap()
+            })
+        }
+
+        def predict(x_values: Vec<Float>, intercept: Float, coefficient: Float) -> Vec<Float> {
+            x_values
+                .iter()
+                .map(|&x| intercept + coefficient * x)
+                .collect()
+        }
+
+        def evaluate(x_values: Vec<Float>, y_values: Vec<Float>, intercept: Float, coefficient: Float) -> Result<Float, String> {
+            let predicted: Vec<f32> = x_values
+                .iter()
+                .map(|&x| intercept + coefficient * x)
+                .collect();
+
+            root_mean_squared_error(&y_values, &predicted).map_err(|e| e.to_string())
         }
 
         def standard_deviation(array: Vec<Float>, mean: Float) -> Float {
